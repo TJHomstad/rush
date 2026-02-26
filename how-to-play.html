@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Play — Glaze Rush</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="donut-logo-2.png">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <a href="." class="logo">
+        <img src="donut-logo-2.png" alt="DerpyDonut">
+        <span>Glaze Rush</span>
+      </a>
+      <nav>
+        <a href=".">Play</a>
+        <a href="https://derpydonut.com">Shikaku</a>
+      </nav>
+    </header>
+
+    <div style="max-width:600px;margin:0 auto;padding:20px 0;">
+      <h1 style="margin-bottom:16px;">How to Play Glaze Rush</h1>
+
+      <h2 style="margin:20px 0 8px;">Goal</h2>
+      <p>Rotate the pipe tiles to connect the <strong>sprinkle source</strong> (diamond) to every <strong>donut</strong> on the board. When sprinkles flow to all donuts, you win!</p>
+
+      <h2 style="margin:20px 0 8px;">Controls</h2>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px;font-weight:500;">Click / Tap</td>
+          <td style="padding:8px;">Rotate tile 90° clockwise</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px;font-weight:500;">Ctrl+Click</td>
+          <td style="padding:8px;">Rotate tile counter-clockwise</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px;font-weight:500;">Right-click</td>
+          <td style="padding:8px;">Lock/unlock a tile in place</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px;font-weight:500;">Long press (mobile)</td>
+          <td style="padding:8px;">Lock/unlock a tile</td>
+        </tr>
+      </table>
+
+      <h2 style="margin:20px 0 8px;">Tile Types</h2>
+      <ul style="padding-left:20px;line-height:1.8;">
+        <li><strong>Straight</strong> — connects two opposite sides</li>
+        <li><strong>Elbow</strong> — connects two adjacent sides (90° bend)</li>
+        <li><strong>T-Junction</strong> — connects three sides</li>
+        <li><strong>Cross</strong> — connects all four sides</li>
+        <li><strong>Donut (terminal)</strong> — end-point with one connection</li>
+      </ul>
+
+      <h2 style="margin:20px 0 8px;">Rules</h2>
+      <ul style="padding-left:20px;line-height:1.8;">
+        <li>All pipes must form a single connected network</li>
+        <li>Sprinkles must reach every donut from the source</li>
+        <li>No closed loops allowed in the network</li>
+        <li>Each puzzle has exactly one solution</li>
+      </ul>
+
+      <h2 style="margin:20px 0 8px;">Tips</h2>
+      <ul style="padding-left:20px;line-height:1.8;">
+        <li>Start with corner and edge tiles — they have fewer valid orientations</li>
+        <li>Lock tiles you're confident about to avoid accidentally rotating them</li>
+        <li>Watch the flow animation — connected pipes turn chocolate brown</li>
+        <li>Use Undo if you make a mistake</li>
+      </ul>
+
+      <h2 style="margin:20px 0 8px;">Difficulty Levels</h2>
+      <ul style="padding-left:20px;line-height:1.8;">
+        <li><strong>Glazed (Easy)</strong> — 5×5 and 7×7 grids, mostly straights and elbows</li>
+        <li><strong>Frosted (Medium)</strong> — 7×7 and 10×10 grids, mix of all tile types</li>
+        <li><strong>Sprinkled (Hard)</strong> — 15×15 and 20×20 grids, complex networks</li>
+        <li><strong>Double Chocolate (Expert)</strong> — 25×25 grids, maximum complexity</li>
+      </ul>
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="." class="btn primary">Play Now</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
