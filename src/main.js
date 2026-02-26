@@ -3,7 +3,7 @@
 
 import { DIFFICULTIES, SIZES_BY_DIFFICULTY } from './constants.js';
 import { formatMs, buildLevelKey, buildStorageId } from './utils.js';
-import { createGameModel, rotateTile, undo, redo, resetPuzzle, computeFlow } from './game.js';
+import { createGameModel, rotateTile, undo, redo, resetPuzzle, computeFlow, toggleLock } from './game.js';
 import { createRenderer, resize, render, updateParticles, cellFromPoint, triggerWinCelebration } from './renderer.js';
 import { loadCatalog, getAvailableLevels, loadPuzzle } from './catalog.js';
 import { saveGameState, restoreGameState, saveLastPuzzle, loadLastPuzzle, recordTime, getBestTime, markCompleted, isCompleted, getCompletedCount, clearProgress } from './storage.js';
@@ -397,14 +397,7 @@ function setupCanvasInput() {
     const cell = cellFromPoint(state.renderer, state.model, e.clientX, e.clientY);
     if (!cell) return;
 
-    const { toggleLock } = import('./game.js').then ? {} : {};
-    // Inline toggle since dynamic import is async
-    const key = `${cell.row},${cell.col}`;
-    if (state.model.lockedTiles.has(key)) {
-      state.model.lockedTiles.delete(key);
-    } else {
-      state.model.lockedTiles.add(key);
-    }
+    toggleLock(state.model, cell.row, cell.col);
   });
 
   // Touch — rotate CW, long press = lock
