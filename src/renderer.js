@@ -42,7 +42,7 @@ export function resize(state, model) {
   const cellW = Math.floor(maxWidth / model.width);
   const cellH = Math.floor(maxHeight / model.height);
   let cellSize = Math.min(cellW, cellH);
-  cellSize = Math.max(32, Math.min(64, cellSize)); // clamp 32-64px
+  cellSize = Math.max(32, cellSize); // min 32px for touch targets, no max cap
 
   const displayWidth = cellSize * model.width;
   const displayHeight = cellSize * model.height;

@@ -6,7 +6,7 @@ import { formatMs, buildLevelKey, buildStorageId } from './utils.js';
 import { createGameModel, rotateTile, undo, redo, resetPuzzle, computeFlow, toggleLock } from './game.js';
 import { createRenderer, resize, render, updateParticles, cellFromPoint, triggerWinCelebration } from './renderer.js';
 import { loadCatalog, getAvailableLevels, loadPuzzle } from './catalog.js';
-import { saveGameState, restoreGameState, saveLastPuzzle, loadLastPuzzle, recordTime, getBestTime, markCompleted, isCompleted, getCompletedCount, clearProgress } from './storage.js';
+import { saveGameState, restoreGameState, saveLastPuzzle, recordTime, getBestTime, markCompleted, isCompleted, getCompletedCount, clearProgress } from './storage.js';
 import * as api from './api.js';
 
 // ─── App State ───────────────────────────────────────────────
@@ -70,7 +70,6 @@ async function init() {
   setupDifficultySelector();
   setupEventListeners();
   loadHomeLeaderboards();
-  checkContinue();
 }
 
 // ─── Auth ────────────────────────────────────────────────────
@@ -180,17 +179,25 @@ function renderHomeLeaderboard(elementId, entries) {
   }
 }
 
-// ─── Continue Button ─────────────────────────────────────────
+// ─── Start Button ───────────────────────────────────────────
 
-function checkContinue() {
-  const last = loadLastPuzzle();
-  const btn = $('continue-btn');
-  if (last) {
-    btn.style.display = '';
-    btn.textContent = `Continue (${last.difficulty} ${last.size}×${last.size} #${last.level})`;
-  } else {
-    btn.style.display = 'none';
-  }
+function handleStart() {
+  if (!state.catalog) return toast('Catalog not loaded');
+  const diff = state.currentDifficulty;
+  const size = state.currentSize;
+  const levels = getAvailableLevels(state.catalog, diff, size);
+  if (levels.length === 0) return toast('No levels available');
+
+  // Find uncompleted levels
+  const uncompleted = levels.filter(l => {
+    const sid = buildStorageId(diff, size, size, l);
+    return !isCompleted(sid);
+  });
+
+  // Pick random from uncompleted, or random from all if all completed
+  const pool = uncompleted.length > 0 ? uncompleted : levels;
+  const level = pool[Math.floor(Math.random() * pool.length)];
+  startPuzzle(diff, size, level);
 }
 
 // ─── Levels Screen ───────────────────────────────────────────
@@ -246,14 +253,14 @@ async function startPuzzle(difficulty, size, level) {
     // Save as last puzzle
     saveLastPuzzle({ difficulty, size, level });
 
-    // Setup canvas
-    const canvas = $('game-canvas');
-    state.renderer = createRenderer(canvas, model);
-
-    // UI
+    // UI — show screen FIRST so container has layout dimensions
     $('puzzle-info').textContent = `${difficulty} ${size}×${size} #${level}`;
     $('moves').textContent = `${model.moves} moves`;
     showScreen('puzzle-screen');
+
+    // Setup canvas (after screen is visible so resize reads correct container width)
+    const canvas = $('game-canvas');
+    state.renderer = createRenderer(canvas, model);
 
     // Reset timer
     stopTimer();
@@ -527,18 +534,8 @@ function setupEventListeners() {
   $('auth-btn').addEventListener('click', handleAuthBtn);
 
   // Home
+  $('start-btn').addEventListener('click', handleStart);
   $('select-level-btn').addEventListener('click', showLevels);
-  $('random-level-btn').addEventListener('click', () => {
-    if (!state.catalog) return toast('Catalog not loaded');
-    const levels = getAvailableLevels(state.catalog, state.currentDifficulty, state.currentSize);
-    if (levels.length === 0) return toast('No levels available');
-    const level = levels[Math.floor(Math.random() * levels.length)];
-    startPuzzle(state.currentDifficulty, state.currentSize, level);
-  });
-  $('continue-btn').addEventListener('click', () => {
-    const last = loadLastPuzzle();
-    if (last) startPuzzle(last.difficulty, last.size, last.level);
-  });
 
   // Levels
   $('levels-back-btn').addEventListener('click', () => showScreen('home-screen'));
@@ -569,7 +566,6 @@ function setupEventListeners() {
     stopRenderLoop();
     stopTimer();
     showScreen('home-screen');
-    checkContinue();
   });
 
   // Solved modal
@@ -592,7 +588,6 @@ function setupEventListeners() {
     $('solved-modal').classList.remove('active');
     stopRenderLoop();
     showScreen('home-screen');
-    checkContinue();
   });
 
   // Canvas input
