@@ -1,0 +1,535 @@
+/* Glaze Rush — Styles (based on DerpyDonut design system) */
+
+:root {
+  --bg: #f7f3ea;
+  --surface: #fffdf9;
+  --ink: #2b2b2b;
+  --ink-light: #666;
+  --accent: #40636d;
+  --accent-hover: #345058;
+  --border: #e0d8cc;
+  --success: #4CAF50;
+  --danger: #e74c3c;
+  --radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --font: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Layout ─────────────────────────────────────────────── */
+
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+header .logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+header .logo img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+header .logo span {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+header nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 14px;
+}
+
+header nav a {
+  color: var(--ink-light);
+  text-decoration: none;
+}
+
+header nav a:hover {
+  color: var(--accent);
+}
+
+header nav button {
+  background: none;
+  border: none;
+  color: var(--ink-light);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 14px;
+}
+
+header nav button:hover {
+  color: var(--accent);
+}
+
+/* ─── Screens ────────────────────────────────────────────── */
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* ─── Login Screen ───────────────────────────────────────── */
+
+#login-screen {
+  text-align: center;
+  padding-top: 40px;
+}
+
+#login-screen .login-logo {
+  width: 100px;
+  margin-bottom: 16px;
+}
+
+#login-screen h2 {
+  margin-bottom: 8px;
+}
+
+#login-screen p {
+  color: var(--ink-light);
+  margin-bottom: 24px;
+}
+
+.login-form {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 15px;
+  margin-bottom: 10px;
+  background: var(--surface);
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.login-form .hint {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-bottom: 16px;
+}
+
+/* ─── Buttons ────────────────────────────────────────────── */
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ─── Home Screen ────────────────────────────────────────── */
+
+#home-screen {
+  text-align: center;
+}
+
+#home-screen .home-logo {
+  width: 80px;
+  margin: 16px auto;
+}
+
+#home-screen h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+#home-screen .lead {
+  color: var(--ink-light);
+  margin-bottom: 24px;
+  font-size: 15px;
+}
+
+.selectors {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.selectors label {
+  font-size: 13px;
+  color: var(--ink-light);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.selectors select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 14px;
+  background: var(--surface);
+  min-width: 140px;
+}
+
+.home-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+/* ─── Leaderboard Section ────────────────────────────────── */
+
+.leaderboards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 500px;
+  margin: 0 auto 32px;
+}
+
+.leaderboard-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: left;
+}
+
+.leaderboard-card h3 {
+  font-size: 14px;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+
+.leaderboard-card ol {
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.leaderboard-card li {
+  margin-bottom: 2px;
+}
+
+.leaderboard-card .rank-name {
+  font-weight: 500;
+}
+
+.leaderboard-card .rank-value {
+  color: var(--ink-light);
+  float: right;
+}
+
+/* ─── Levels Screen ──────────────────────────────────────── */
+
+#levels-screen h2 {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+#levels-screen .subtitle {
+  text-align: center;
+  color: var(--ink-light);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  max-width: 500px;
+  margin: 0 auto 24px;
+}
+
+.level-btn {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  position: relative;
+  transition: all 0.15s;
+}
+
+.level-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.level-btn.completed {
+  background: #FFF8E1;
+  border-color: #F4C430;
+}
+
+.level-btn.completed::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: #F4C430;
+  border-radius: 50%;
+}
+
+/* ─── Puzzle Screen ──────────────────────────────────────── */
+
+#puzzle-screen {
+  text-align: center;
+}
+
+.puzzle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.puzzle-header .puzzle-info {
+  color: var(--ink-light);
+}
+
+.puzzle-header .timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.puzzle-header .moves {
+  color: var(--ink-light);
+}
+
+.canvas-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  overflow: auto;
+}
+
+#game-canvas {
+  cursor: pointer;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.puzzle-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.puzzle-controls .btn {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+/* ─── Puzzle Leaderboard Sidebar ─────────────────────────── */
+
+.puzzle-leaderboard {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.puzzle-leaderboard h3 {
+  font-size: 14px;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+
+.puzzle-leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.puzzle-leaderboard th {
+  text-align: left;
+  color: var(--ink-light);
+  font-weight: 500;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.puzzle-leaderboard td {
+  padding: 4px 8px;
+}
+
+.puzzle-leaderboard tr.highlight {
+  background: #FFF8E1;
+}
+
+/* ─── Solved Modal ───────────────────────────────────────── */
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: calc(var(--radius) * 2);
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.modal .solved-time {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.modal .solved-best {
+  color: var(--ink-light);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.modal .solved-moves {
+  color: var(--ink-light);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.modal .solved-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* ─── Toast ──────────────────────────────────────────────── */
+
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+}
+
+.toast {
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  margin-top: 8px;
+  animation: toast-in 0.3s ease, toast-out 0.3s ease 2.5s forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  header { padding: 8px 0; }
+  header .logo span { font-size: 16px; }
+  header nav { gap: 10px; font-size: 13px; }
+  #home-screen h1 { font-size: 22px; }
+  .leaderboards { grid-template-columns: 1fr; }
+  .puzzle-header { font-size: 13px; }
+  .puzzle-header .timer { font-size: 16px; }
+}
