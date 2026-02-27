@@ -527,6 +527,16 @@ header nav button:hover {
   to { opacity: 0; }
 }
 
+/* ─── Version Footer ─────────────────────────────────────── */
+
+.app-version {
+  text-align: center;
+  color: var(--ink-light);
+  font-size: 12px;
+  padding: 16px 0 8px;
+  opacity: 0.5;
+}
+
 /* ─── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 600px) {
