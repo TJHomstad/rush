@@ -3,11 +3,11 @@
 
 import {
   GAME_BG, SPRINKLE_COLORS,
-  DONUT_BASE, DONUT_BASE_SHADOW,
-  HAPPY_FROSTING, SAD_DONUT_BASE, SAD_DONUT_SHADOW, SAD_FROSTING,
+  DONUT_BASE_SHADOW,
+  HAPPY_FROSTING, SAD_FROSTING,
   PIPE_OUTLINE,
   GLASS_TINT, GLASS_OUTLINE, GLASS_HIGHLIGHT, GLASS_SHADOW, GLASS_FLOW_FILL,
-  FACE_OUTLINE, EYE_WHITE, PUPIL_COLOR, TONGUE_COLOR, BLUSH_COLOR, MOUTH_COLOR, SAD_EYE,
+  FACE_OUTLINE, EYE_WHITE, PUPIL_COLOR, TONGUE_COLOR, BLUSH_COLOR, MOUTH_COLOR,
   DIR_OFFSET
 } from './constants.js';
 import { getActiveConnections } from './game.js';
@@ -249,74 +249,129 @@ function drawTile(ctx, tile, x, y, cellSize, inFlow, inWinCelebration, winElapse
 // ─── Draw Donut (dispatcher) ─────────────────────────────────
 
 function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winElapsed) {
-  const outerR = cellSize * 0.34;
-  const ringWidth = cellSize * 0.14;
-  const innerR = outerR - ringWidth;
+  const outerR = cellSize * 0.42;
+  const innerR = cellSize * 0.10;
+  const outlineW = Math.max(2, cellSize * 0.025);
+
+  // Filled donut types have no visible hole
+  const isFilled = (style === 'boston_cream' || style === 'powdered');
 
   if (inFlow) {
-    drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR, inWinCelebration, winElapsed);
+    drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, innerR, outlineW, isFilled, inWinCelebration, winElapsed);
   } else {
-    drawSadDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR);
+    drawSadDonut(ctx, cx, cy, cellSize, style, outerR, innerR, outlineW, isFilled);
   }
 }
 
-// ─── Donut Body (shared ring drawing) ────────────────────────
+// ─── Donut Body (new cartoon-style) ──────────────────────────
 
-function drawDonutBody(ctx, outerR, ringWidth, innerR, bodyGrad, outlineColor, frostColor, frostHighlight, frostStart, frostEnd, style, cellSize) {
-  // Body ring
-  ctx.strokeStyle = bodyGrad;
-  ctx.lineWidth = ringWidth;
-  ctx.beginPath();
-  ctx.arc(0, 0, outerR - ringWidth / 2, 0, Math.PI * 2);
-  ctx.stroke();
+function drawDonutBodyRing(ctx, outerR, innerR, outlineW, bodyColor, bodyShadow, frostColor, frostHighlight, frostStart, frostEnd, style, cellSize) {
+  // Solid donut body fill (ring shape using evenodd)
+  const bodyGrad = ctx.createRadialGradient(
+    -outerR * 0.25, -outerR * 0.25, outerR * 0.1,
+    0, 0, outerR
+  );
+  bodyGrad.addColorStop(0, bodyColor);
+  bodyGrad.addColorStop(0.7, bodyShadow);
+  bodyGrad.addColorStop(1, bodyShadow);
 
-  // Cartoon outline (thick for character look)
-  ctx.strokeStyle = outlineColor;
-  ctx.lineWidth = Math.max(1.5, cellSize * 0.02);
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
   ctx.arc(0, 0, outerR, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(0, 0, innerR, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.arc(0, 0, innerR, 0, Math.PI * 2, true);
+  ctx.fill('evenodd');
 
-  // Frosting overlay
+  // Frosting on top half — thick arc
+  const ringMid = (outerR + innerR) / 2;
+  const ringWidth = outerR - innerR;
   ctx.strokeStyle = frostColor;
-  ctx.lineWidth = ringWidth * 0.75;
+  ctx.lineWidth = ringWidth * 0.65;
   ctx.lineCap = 'butt';
   ctx.beginPath();
-  ctx.arc(0, 0, outerR - ringWidth / 2, frostStart, frostEnd);
+  ctx.arc(0, 0, ringMid, frostStart, frostEnd);
   ctx.stroke();
 
   // Frosting highlight
   if (frostHighlight) {
     ctx.strokeStyle = frostHighlight;
-    ctx.lineWidth = ringWidth * 0.25;
+    ctx.lineWidth = ringWidth * 0.2;
     ctx.beginPath();
-    ctx.arc(0, 0, outerR - ringWidth * 0.35, frostStart + 0.3, frostStart + (frostEnd - frostStart) * 0.55);
+    ctx.arc(0, 0, ringMid + ringWidth * 0.12, frostStart + 0.3, frostStart + (frostEnd - frostStart) * 0.5);
     ctx.stroke();
   }
 
-  // Style-specific frosting details
-  drawFrostingDetails(ctx, style, outerR, ringWidth, innerR, frostStart, frostEnd, cellSize);
+  // Style-specific details on frosting
+  drawFrostingDetails(ctx, style, outerR, innerR, frostStart, frostEnd, cellSize);
 
-  // Donut hole
-  const holeGrad = ctx.createRadialGradient(0, 0, innerR * 0.3, 0, 0, innerR);
-  holeGrad.addColorStop(0, 'rgba(60, 40, 20, 0.35)');
-  holeGrad.addColorStop(0.7, 'rgba(60, 40, 20, 0.1)');
-  holeGrad.addColorStop(1, 'rgba(139, 105, 20, 0.25)');
+  // Bold cartoon outline — outer
+  ctx.strokeStyle = FACE_OUTLINE;
+  ctx.lineWidth = outlineW;
+  ctx.beginPath();
+  ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Bold cartoon outline — inner hole
+  ctx.beginPath();
+  ctx.arc(0, 0, innerR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Hole shading
+  const holeGrad = ctx.createRadialGradient(0, 0, innerR * 0.2, 0, 0, innerR);
+  holeGrad.addColorStop(0, 'rgba(60, 30, 10, 0.4)');
+  holeGrad.addColorStop(1, 'rgba(80, 50, 20, 0.15)');
   ctx.fillStyle = holeGrad;
   ctx.beginPath();
   ctx.arc(0, 0, innerR, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function drawFrostingDetails(ctx, style, outerR, ringWidth, innerR, frostStart, frostEnd, cellSize) {
+function drawDonutBodyFilled(ctx, outerR, outlineW, bodyColor, bodyShadow, topColor, topHighlight, cellSize, style) {
+  // Filled donut (boston_cream, powdered) — solid oval, no hole
+  const ovalH = outerR * 0.75;
+
+  // Body fill
+  const bodyGrad = ctx.createRadialGradient(
+    -outerR * 0.2, -ovalH * 0.2, outerR * 0.1,
+    0, 0, outerR
+  );
+  bodyGrad.addColorStop(0, bodyColor);
+  bodyGrad.addColorStop(0.8, bodyShadow);
+
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, outerR, ovalH, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Top coating (chocolate for boston_cream, sugar for powdered)
+  ctx.fillStyle = topColor;
+  ctx.beginPath();
+  ctx.ellipse(0, -ovalH * 0.1, outerR * 0.92, ovalH * 0.65, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  if (topHighlight) {
+    ctx.fillStyle = topHighlight;
+    ctx.beginPath();
+    ctx.ellipse(-outerR * 0.15, -ovalH * 0.35, outerR * 0.35, ovalH * 0.18, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Bold outline
+  ctx.strokeStyle = FACE_OUTLINE;
+  ctx.lineWidth = outlineW;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, outerR, ovalH, 0, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawFrostingDetails(ctx, style, outerR, innerR, frostStart, frostEnd, cellSize) {
+  const ringMid = (outerR + innerR) / 2;
+  const ringWidth = outerR - innerR;
+
   if (style === 'pink_sprinkle') {
-    const midR = outerR - ringWidth / 2;
-    for (let i = 0; i < 10; i++) {
-      const angle = frostStart + (frostEnd - frostStart) * (i + 0.5) / 10;
-      const sr = midR + (Math.sin(i * 7.3) * ringWidth * 0.2);
+    // Colorful sprinkles scattered on frosting
+    for (let i = 0; i < 12; i++) {
+      const angle = frostStart + (frostEnd - frostStart) * (i + 0.5) / 12;
+      const sr = ringMid + (Math.sin(i * 7.3) * ringWidth * 0.15);
       const sx = Math.cos(angle) * sr;
       const sy = Math.sin(angle) * sr;
       const rot = (i * 47) % 360 * Math.PI / 180;
@@ -324,39 +379,19 @@ function drawFrostingDetails(ctx, style, outerR, ringWidth, innerR, frostStart, 
       ctx.translate(sx, sy);
       ctx.rotate(rot);
       ctx.fillStyle = SPRINKLE_COLORS[i % SPRINKLE_COLORS.length];
-      ctx.fillRect(-cellSize * 0.025, -cellSize * 0.008, cellSize * 0.05, cellSize * 0.016);
+      const sw = cellSize * 0.03;
+      const sh = cellSize * 0.01;
+      ctx.fillRect(-sw, -sh, sw * 2, sh * 2);
       ctx.restore();
     }
-  } else if (style === 'boston_cream') {
-    const frosting = HAPPY_FROSTING.boston_cream;
-    if (frosting && frosting.cap) {
-      ctx.strokeStyle = frosting.cap;
-      ctx.lineWidth = ringWidth * 0.5;
-      ctx.beginPath();
-      ctx.arc(0, 0, outerR - ringWidth / 2, -Math.PI * 0.5, Math.PI * 0.5);
-      ctx.stroke();
-    }
-  } else if (style === 'powdered') {
-    ctx.strokeStyle = 'rgba(123, 237, 159, 0.45)';
-    ctx.lineWidth = ringWidth * 0.85;
-    ctx.beginPath();
-    ctx.arc(0, 0, outerR - ringWidth / 2, 0, Math.PI * 2);
-    ctx.stroke();
-    for (let i = 0; i < 14; i++) {
-      const angle = (Math.PI * 2 / 14) * i;
-      const sr = outerR - ringWidth / 2 + (Math.sin(i * 5.1) * ringWidth * 0.15);
-      ctx.fillStyle = 'rgba(168, 245, 192, 0.8)';
-      ctx.beginPath();
-      ctx.arc(Math.cos(angle) * sr, Math.sin(angle) * sr, cellSize * 0.012, 0, Math.PI * 2);
-      ctx.fill();
-    }
   } else if (style === 'maple') {
-    ctx.strokeStyle = '#7C75D4';
-    ctx.lineWidth = ringWidth * 0.12;
+    // Drizzle lines on frosting
+    ctx.strokeStyle = 'rgba(160, 120, 40, 0.4)';
+    ctx.lineWidth = ringWidth * 0.08;
     for (let i = 0; i < 3; i++) {
-      const a1 = frostStart + (frostEnd - frostStart) * (0.2 + i * 0.25);
+      const a1 = frostStart + (frostEnd - frostStart) * (0.15 + i * 0.28);
       ctx.beginPath();
-      ctx.arc(0, 0, outerR - ringWidth * (0.35 + i * 0.1), a1, a1 + 0.3);
+      ctx.arc(0, 0, ringMid + ringWidth * (0.05 - i * 0.08), a1, a1 + 0.4);
       ctx.stroke();
     }
   }
@@ -364,37 +399,31 @@ function drawFrostingDetails(ctx, style, outerR, ringWidth, innerR, frostStart, 
 
 // ─── Sad Donut (unfilled — gray, droopy, sad face) ───────────
 
-function drawSadDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR) {
+function drawSadDonut(ctx, cx, cy, cellSize, style, outerR, innerR, outlineW, isFilled) {
   const scale = 0.92;
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
 
-  // Gray body gradient
-  const bodyGrad = ctx.createRadialGradient(
-    -outerR * 0.2, -outerR * 0.2, innerR * 0.5,
-    0, 0, outerR * 1.1
-  );
-  bodyGrad.addColorStop(0, '#B8B8B8');
-  bodyGrad.addColorStop(0.5, SAD_DONUT_BASE);
-  bodyGrad.addColorStop(1, SAD_DONUT_SHADOW);
+  if (isFilled) {
+    const topColor = style === 'boston_cream' ? '#7A6A5A' : '#C8C0B8';
+    const topHL = style === 'boston_cream' ? 'rgba(140,130,120,0.3)' : 'rgba(220,215,210,0.3)';
+    drawDonutBodyFilled(ctx, outerR, outlineW, '#B0A898', '#908878', topColor, topHL, cellSize, style);
+  } else {
+    const droopStart = -Math.PI * 0.15;
+    const droopEnd = Math.PI * 1.15;
+    drawDonutBodyRing(ctx, outerR, innerR, outlineW, '#B8B0A8', '#908880', SAD_FROSTING, null, droopStart, droopEnd, null, cellSize);
+  }
 
-  // Droopy frosting (sags to bottom)
-  const droopStart = -Math.PI * 0.15;
-  const droopEnd = Math.PI * 1.15;
-
-  drawDonutBody(ctx, outerR, ringWidth, innerR, bodyGrad, '#686868', SAD_FROSTING, null, droopStart, droopEnd, null, cellSize);
-
-  // Draw sad face on the frosting area (upper portion of donut ring)
-  drawSadFace(ctx, cellSize, outerR, ringWidth);
+  drawSadFace(ctx, cellSize, style, outerR, innerR, outlineW, isFilled);
 
   ctx.restore();
 }
 
-// ─── Happy Donut (filled — vibrant, derpy face) ──────────────
+// ─── Happy Donut (filled — vibrant, cartoon face) ─────────────
 
-function drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR, inWinCelebration, winElapsed) {
+function drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, innerR, outlineW, isFilled, inWinCelebration, winElapsed) {
   const frosting = HAPPY_FROSTING[style] || HAPPY_FROSTING.glazed;
 
   let scale = 1.0 + 0.02 * Math.sin(performance.now() / 300);
@@ -413,31 +442,28 @@ function drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR,
   ctx.shadowColor = '#FF1493';
   ctx.shadowBlur = cellSize * 0.25 * glowPulse;
 
-  // Warm golden body
-  const bodyGrad = ctx.createRadialGradient(
-    -outerR * 0.2, -outerR * 0.2, innerR * 0.5,
-    0, 0, outerR * 1.1
-  );
-  bodyGrad.addColorStop(0, '#F0D080');
-  bodyGrad.addColorStop(0.5, DONUT_BASE);
-  bodyGrad.addColorStop(1, DONUT_BASE_SHADOW);
-
+  // Draw body
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
 
-  const frostStart = -Math.PI * 0.85;
-  const frostEnd = Math.PI * 0.85;
-
-  drawDonutBody(ctx, outerR, ringWidth, innerR, bodyGrad, '#8B6914', frosting.main, frosting.highlight, frostStart, frostEnd, style, cellSize);
+  if (isFilled) {
+    const topColor = style === 'boston_cream' ? frosting.cap || '#5C3317' : frosting.main;
+    const topHL = frosting.highlight ? frosting.highlight + '88' : null;
+    drawDonutBodyFilled(ctx, outerR, outlineW, '#F0D080', DONUT_BASE_SHADOW, topColor, topHL, cellSize, style);
+  } else {
+    const frostStart = -Math.PI * 0.85;
+    const frostEnd = Math.PI * 0.85;
+    drawDonutBodyRing(ctx, outerR, innerR, outlineW, '#F0D080', DONUT_BASE_SHADOW, frosting.main, frosting.highlight, frostStart, frostEnd, style, cellSize);
+  }
 
   // Draw happy face
-  drawHappyFace(ctx, cellSize, outerR, ringWidth, style);
+  drawHappyFace(ctx, cellSize, style, outerR, innerR, outlineW, isFilled);
 
-  // Sparkle dots around happy donut
+  // Sparkle dots
   const now = performance.now() / 1000;
   for (let i = 0; i < 4; i++) {
     const angle = now * 1.5 + (Math.PI * 2 / 4) * i;
-    const dist = outerR + cellSize * 0.06;
+    const dist = outerR + cellSize * 0.04;
     const sx = Math.cos(angle) * dist;
     const sy = Math.sin(angle) * dist;
     const sparkleAlpha = 0.4 + 0.4 * Math.sin(now * 4 + i * 1.7);
@@ -450,351 +476,486 @@ function drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR,
   ctx.restore();
 }
 
-// ─── Sad Face ────────────────────────────────────────────────
+// ─── Sad Face (heavy eyelids, desaturated, droopy) ───────────
 
-function drawSadFace(ctx, cellSize, outerR, ringWidth) {
-  // Face is drawn on the upper portion of the donut ring
-  // Position: centered horizontally, on the top arc of the ring
-  const faceY = -(outerR - ringWidth / 2); // top of ring
-  const faceScale = Math.min(1, cellSize / 60); // adaptive detail
+function drawSadFace(ctx, cellSize, style, outerR, innerR, outlineW, isFilled) {
+  const eyeY = -outerR * 0.25;
+  const mouthY = outerR * 0.35;
+  const eyeSpacing = outerR * 0.36;
+  const lineW = Math.max(1.5, cellSize * 0.022);
+  const sadSkin = '#B0A898';
 
-  ctx.save();
-
-  if (cellSize >= 60) {
-    // Full detail: eyes with droopy lids, eyebrows, frown
-    drawSadEyes(ctx, faceY, outerR, ringWidth, cellSize);
-    drawSadEyebrows(ctx, faceY, outerR, ringWidth, cellSize);
-    drawSadMouth(ctx, faceY, outerR, ringWidth, cellSize);
-  } else if (cellSize >= 40) {
-    // Medium detail: eyes and mouth only
-    drawSadEyes(ctx, faceY, outerR, ringWidth, cellSize);
-    drawSadMouth(ctx, faceY, outerR, ringWidth, cellSize);
+  if (cellSize >= 70) {
+    drawSadEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, lineW, sadSkin);
+    drawSadEyebrows(ctx, eyeY, eyeSpacing, outerR, cellSize, lineW);
+    drawSadMouth(ctx, mouthY, outerR, cellSize, lineW);
+    if (style === 'maple' && cellSize >= 70) {
+      drawTears(ctx, eyeY, eyeSpacing, outerR, cellSize);
+    }
+  } else if (cellSize >= 45) {
+    drawSadEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, lineW, sadSkin);
+    drawSadMouth(ctx, mouthY, outerR, cellSize, lineW);
   } else {
-    // Minimal: two dots and a line
-    const dotR = cellSize * 0.025;
-    const spacing = cellSize * 0.08;
-    ctx.fillStyle = SAD_EYE;
+    // Minimal: two dim dots + frown
+    const dotR = outerR * 0.08;
+    const sp = outerR * 0.26;
+    ctx.fillStyle = '#777';
     ctx.beginPath();
-    ctx.arc(-spacing, faceY, dotR, 0, Math.PI * 2);
+    ctx.arc(-sp, eyeY, dotR, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(spacing, faceY, dotR, 0, Math.PI * 2);
+    ctx.arc(sp, eyeY, dotR, 0, Math.PI * 2);
     ctx.fill();
-    // Tiny frown
-    ctx.strokeStyle = SAD_EYE;
-    ctx.lineWidth = 1;
+    // Frown
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = Math.max(1.5, cellSize * 0.025);
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(0, faceY + cellSize * 0.06, cellSize * 0.04, Math.PI * 1.2, Math.PI * 1.8);
+    ctx.arc(0, mouthY + outerR * 0.05, outerR * 0.14, Math.PI * 1.2, Math.PI * 1.8);
     ctx.stroke();
   }
-
-  ctx.restore();
 }
 
-function drawSadEyes(ctx, faceY, outerR, ringWidth, cellSize) {
-  const eyeSpacing = cellSize * 0.09;
-  const eyeW = cellSize * 0.045;
-  const eyeH = cellSize * 0.04;
+function drawSadEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, lineW, sadSkin) {
+  const eyeR = outerR * 0.16;
 
   for (const side of [-1, 1]) {
     const ex = side * eyeSpacing;
-    const ey = faceY;
+    const ey = eyeY;
 
-    // Eye white (oval)
-    ctx.fillStyle = '#D0D0D0'; // dull white for sad
+    // Dull eye white
+    ctx.fillStyle = '#D8D4D0';
     ctx.beginPath();
-    ctx.ellipse(ex, ey, eyeW, eyeH, 0, 0, Math.PI * 2);
+    ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#686868';
-    ctx.lineWidth = 0.8;
+
+    // Outline
+    ctx.strokeStyle = '#686060';
+    ctx.lineWidth = lineW;
+    ctx.beginPath();
+    ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Pupil (small, looking down)
-    ctx.fillStyle = '#555555';
+    // Small pupil looking down
+    const pupilR = eyeR * 0.4;
+    ctx.fillStyle = '#4A4040';
     ctx.beginPath();
-    ctx.arc(ex, ey + eyeH * 0.25, eyeW * 0.4, 0, Math.PI * 2);
+    ctx.arc(ex, ey + eyeR * 0.25, pupilR, 0, Math.PI * 2);
     ctx.fill();
 
-    // Droopy eyelid (covers top half)
-    ctx.fillStyle = SAD_DONUT_BASE;
+    // Tiny dim highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.beginPath();
-    ctx.ellipse(ex, ey - eyeH * 0.15, eyeW * 1.15, eyeH * 0.7, 0, Math.PI, Math.PI * 2);
+    ctx.arc(ex - pupilR * 0.25, ey + eyeR * 0.1, pupilR * 0.25, 0, Math.PI * 2);
     ctx.fill();
+
+    // HEAVY droopy eyelid — covers 65% of eye from top (the key sad expression)
+    drawEyelid(ctx, ex, ey, eyeR, 0.65, sadSkin, lineW);
   }
 }
 
-function drawSadEyebrows(ctx, faceY, outerR, ringWidth, cellSize) {
-  const browSpacing = cellSize * 0.09;
-  const browY = faceY - cellSize * 0.055;
-  const browLen = cellSize * 0.055;
+function drawSadEyebrows(ctx, eyeY, eyeSpacing, outerR, cellSize, lineW) {
+  const browY = eyeY - outerR * 0.22;
+  const browLen = outerR * 0.2;
 
-  ctx.strokeStyle = '#686868';
-  ctx.lineWidth = Math.max(1, cellSize * 0.015);
+  ctx.strokeStyle = '#686060';
+  ctx.lineWidth = lineW * 1.2;
   ctx.lineCap = 'round';
 
-  // Left brow — angled up in the middle (worried)
+  // Worried angle — inner ends up, outer ends down
+  // Left brow
   ctx.beginPath();
-  ctx.moveTo(-browSpacing - browLen * 0.5, browY - cellSize * 0.01);
-  ctx.lineTo(-browSpacing + browLen * 0.5, browY + cellSize * 0.02);
+  ctx.moveTo(-eyeSpacing - browLen * 0.5, browY - outerR * 0.03);
+  ctx.lineTo(-eyeSpacing + browLen * 0.5, browY + outerR * 0.05);
   ctx.stroke();
 
   // Right brow
   ctx.beginPath();
-  ctx.moveTo(browSpacing + browLen * 0.5, browY - cellSize * 0.01);
-  ctx.lineTo(browSpacing - browLen * 0.5, browY + cellSize * 0.02);
+  ctx.moveTo(eyeSpacing + browLen * 0.5, browY - outerR * 0.03);
+  ctx.lineTo(eyeSpacing - browLen * 0.5, browY + outerR * 0.05);
   ctx.stroke();
 }
 
-function drawSadMouth(ctx, faceY, outerR, ringWidth, cellSize) {
-  const mouthY = faceY + cellSize * 0.065;
-  const mouthW = cellSize * 0.06;
+function drawSadMouth(ctx, mouthY, outerR, cellSize, lineW) {
+  const mouthW = outerR * 0.25;
 
-  ctx.strokeStyle = '#686868';
-  ctx.lineWidth = Math.max(1, cellSize * 0.015);
+  ctx.strokeStyle = '#686060';
+  ctx.lineWidth = lineW * 1.3;
   ctx.lineCap = 'round';
 
-  // Downturned frown
+  // Pronounced downturned frown
   ctx.beginPath();
-  ctx.arc(0, mouthY - cellSize * 0.02, mouthW, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.moveTo(-mouthW, mouthY - outerR * 0.06);
+  ctx.quadraticCurveTo(0, mouthY + outerR * 0.12, mouthW, mouthY - outerR * 0.06);
   ctx.stroke();
 }
 
-// ─── Happy Face ──────────────────────────────────────────────
+function drawTears(ctx, eyeY, eyeSpacing, outerR, cellSize) {
+  // Tears streaming down from eyes (maple style)
+  ctx.fillStyle = 'rgba(140, 180, 220, 0.5)';
 
-function drawHappyFace(ctx, cellSize, outerR, ringWidth, style) {
-  const faceY = -(outerR - ringWidth / 2);
+  for (const side of [-1, 1]) {
+    const tx = side * eyeSpacing + side * outerR * 0.05;
+    const startY = eyeY + outerR * 0.15;
 
-  ctx.save();
-
-  if (cellSize >= 60) {
-    // Full detail: derpy eyes, eyebrows, mouth with tongue, blush
-    drawHappyEyes(ctx, faceY, outerR, ringWidth, cellSize, style);
-    drawHappyEyebrows(ctx, faceY, outerR, ringWidth, cellSize, style);
-    drawHappyMouth(ctx, faceY, outerR, ringWidth, cellSize, style);
-    drawBlush(ctx, faceY, outerR, ringWidth, cellSize);
-  } else if (cellSize >= 40) {
-    // Medium: eyes and mouth
-    drawHappyEyes(ctx, faceY, outerR, ringWidth, cellSize, style);
-    drawHappyMouth(ctx, faceY, outerR, ringWidth, cellSize, style);
-  } else {
-    // Minimal: two bright dots and a curve
-    const dotR = cellSize * 0.03;
-    const spacing = cellSize * 0.08;
-    ctx.fillStyle = PUPIL_COLOR;
+    // Tear drop
     ctx.beginPath();
-    ctx.arc(-spacing, faceY, dotR, 0, Math.PI * 2);
+    ctx.moveTo(tx, startY);
+    ctx.quadraticCurveTo(tx - outerR * 0.04, startY + outerR * 0.15, tx, startY + outerR * 0.25);
+    ctx.quadraticCurveTo(tx + outerR * 0.04, startY + outerR * 0.15, tx, startY);
     ctx.fill();
+
+    // Tear trail
+    ctx.strokeStyle = 'rgba(140, 180, 220, 0.3)';
+    ctx.lineWidth = outerR * 0.04;
     ctx.beginPath();
-    ctx.arc(spacing * 0.9, faceY - cellSize * 0.01, dotR * 0.85, 0, Math.PI * 2);
-    ctx.fill();
-    // Tiny smile
-    ctx.strokeStyle = MOUTH_COLOR;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(0, faceY + cellSize * 0.035, cellSize * 0.04, 0, Math.PI);
+    ctx.moveTo(tx, startY + outerR * 0.2);
+    ctx.lineTo(tx + side * outerR * 0.03, startY + outerR * 0.5);
     ctx.stroke();
   }
-
-  ctx.restore();
 }
 
-function drawHappyEyes(ctx, faceY, outerR, ringWidth, cellSize, style) {
-  const eyeSpacing = cellSize * 0.09;
-  // Derpy: slightly different sizes and heights
-  const eyeSizes = [
-    { w: cellSize * 0.05, h: cellSize * 0.05 },
-    { w: cellSize * 0.042, h: cellSize * 0.042 }
-  ];
-  const eyeOffsets = [
-    { x: -eyeSpacing, y: faceY },
-    { x: eyeSpacing * 0.9, y: faceY - cellSize * 0.012 } // right eye slightly higher
-  ];
+// ─── Happy Face (new cartoon style — face spans entire donut) ─
 
-  // Per-style eye tweaks
-  const isCrossEyed = style === 'pink_sprinkle';
-  const isSleepy = style === 'maple';
+function drawHappyFace(ctx, cellSize, style, outerR, innerR, outlineW, isFilled) {
+  // Face center is at donut center (0,0) — eyes above hole, mouth below
+  const eyeY = -outerR * 0.28;   // eyes well above the hole
+  const mouthY = outerR * 0.32;  // mouth well below the hole
+  const eyeSpacing = outerR * 0.38;
+  const lineW = Math.max(1.5, cellSize * 0.022);
+
+  if (cellSize >= 70) {
+    // Full detail
+    drawHappyEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, style, lineW);
+    drawHappyEyebrows(ctx, eyeY, eyeSpacing, outerR, cellSize, style, lineW);
+    drawHappyMouth(ctx, mouthY, outerR, cellSize, style, lineW);
+    if (style === 'powdered') {
+      drawBlush(ctx, mouthY - outerR * 0.12, outerR, cellSize);
+    }
+  } else if (cellSize >= 45) {
+    // Medium detail — eyes with eyelids + mouth, no brows/blush
+    drawHappyEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, style, lineW);
+    drawHappyMouth(ctx, mouthY, outerR, cellSize, style, lineW);
+  } else {
+    // Minimal — two oval dots + curved line
+    const dotR = outerR * 0.10;
+    const sp = outerR * 0.28;
+    ctx.fillStyle = PUPIL_COLOR;
+    ctx.beginPath();
+    ctx.arc(-sp, eyeY, dotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(sp, eyeY, dotR * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    // Smile
+    ctx.strokeStyle = FACE_OUTLINE;
+    ctx.lineWidth = Math.max(1.5, cellSize * 0.025);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(0, mouthY - outerR * 0.1, outerR * 0.18, 0.15, Math.PI - 0.15);
+    ctx.stroke();
+  }
+}
+
+function drawHappyEyes(ctx, eyeY, eyeSpacing, outerR, cellSize, style, lineW) {
+  // Eye size: ~18% of donut diameter — big cartoon eyes
+  const baseEyeR = outerR * 0.18;
+
+  // Per-style personality
+  const isCrazy = style === 'pink_sprinkle';
+  const isSleepy = style === 'maple' || style === 'glazed';
   const isSurprised = style === 'boston_cream';
   const isSquinty = style === 'powdered';
 
-  for (let i = 0; i < 2; i++) {
-    const { x: ex, y: ey } = eyeOffsets[i];
-    let { w: eyeW, h: eyeH } = eyeSizes[i];
+  // Mismatched eye sizes for pink_sprinkle
+  const eyeConfigs = isCrazy
+    ? [{ r: baseEyeR * 1.15, x: -eyeSpacing * 0.95, y: eyeY - outerR * 0.02 },
+       { r: baseEyeR * 0.85, x: eyeSpacing * 1.0, y: eyeY + outerR * 0.03 }]
+    : [{ r: baseEyeR, x: -eyeSpacing, y: eyeY },
+       { r: isSurprised ? baseEyeR * 1.08 : baseEyeR * 0.95, x: eyeSpacing, y: eyeY }];
 
-    if (isSurprised) {
-      eyeW *= 1.15;
-      eyeH *= 1.15;
-    }
+  for (let i = 0; i < 2; i++) {
+    const { r: eyeR, x: ex, y: ey } = eyeConfigs[i];
+    const pupilR = eyeR * 0.55;
 
     // Eye white
     ctx.fillStyle = EYE_WHITE;
     ctx.beginPath();
-    ctx.ellipse(ex, ey, eyeW, eyeH, 0, 0, Math.PI * 2);
+    ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
     ctx.fill();
+
+    // Bold outline
     ctx.strokeStyle = FACE_OUTLINE;
-    ctx.lineWidth = Math.max(1, cellSize * 0.012);
+    ctx.lineWidth = lineW;
+    ctx.beginPath();
+    ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Pupil
-    let pupilX = ex;
-    let pupilY = ey;
-    const pupilR = eyeW * 0.5;
-
-    if (isCrossEyed) {
-      // Cross-eyed: pupils point inward
-      pupilX = ex + (i === 0 ? eyeW * 0.2 : -eyeW * 0.2);
+    // Iris + pupil
+    let px = ex, py = ey;
+    if (isCrazy) {
+      px = ex + (i === 0 ? eyeR * 0.15 : -eyeR * 0.2);
+      py = ey + eyeR * 0.05;
     }
 
-    ctx.fillStyle = PUPIL_COLOR;
-    ctx.beginPath();
-    ctx.arc(pupilX, pupilY, pupilR, 0, Math.PI * 2);
-    ctx.fill();
+    // X-pupil for one eye of pink_sprinkle
+    if (isCrazy && i === 0) {
+      const xSize = eyeR * 0.35;
+      ctx.strokeStyle = PUPIL_COLOR;
+      ctx.lineWidth = lineW * 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(px - xSize, py - xSize);
+      ctx.lineTo(px + xSize, py + xSize);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(px + xSize, py - xSize);
+      ctx.lineTo(px - xSize, py + xSize);
+      ctx.stroke();
+    } else {
+      // Normal round pupil
+      ctx.fillStyle = '#2A1A0A';
+      ctx.beginPath();
+      ctx.arc(px, py, pupilR, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Highlight dot (the "alive" look)
-    ctx.fillStyle = EYE_WHITE;
-    ctx.beginPath();
-    ctx.arc(pupilX - pupilR * 0.3, pupilY - pupilR * 0.3, pupilR * 0.35, 0, Math.PI * 2);
-    ctx.fill();
+      // Highlight (life in the eyes)
+      ctx.fillStyle = EYE_WHITE;
+      ctx.beginPath();
+      ctx.arc(px - pupilR * 0.3, py - pupilR * 0.35, pupilR * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      // Small secondary highlight
+      ctx.beginPath();
+      ctx.arc(px + pupilR * 0.25, py + pupilR * 0.2, pupilR * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-    // Sleepy: half-closed eyelids
+    // Eyelids — THE primary expression tool
+    const skinColor = '#E8C880';
+
     if (isSleepy) {
-      ctx.fillStyle = DONUT_BASE;
-      ctx.beginPath();
-      ctx.ellipse(ex, ey - eyeH * 0.2, eyeW * 1.1, eyeH * 0.55, 0, Math.PI, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Squinty: mostly closed
-    if (isSquinty) {
-      ctx.fillStyle = DONUT_BASE;
-      ctx.beginPath();
-      ctx.ellipse(ex, ey - eyeH * 0.05, eyeW * 1.1, eyeH * 0.45, 0, Math.PI, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(ex, ey + eyeH * 0.05, eyeW * 1.1, eyeH * 0.45, 0, 0, Math.PI);
-      ctx.fill();
+      // Half-lidded (50% coverage from top)
+      drawEyelid(ctx, ex, ey, eyeR, 0.50, skinColor, lineW);
+    } else if (isSquinty) {
+      // Nearly closed — top and bottom lids
+      drawEyelid(ctx, ex, ey, eyeR, 0.55, skinColor, lineW);
+      drawEyelidBottom(ctx, ex, ey, eyeR, 0.40, skinColor, lineW);
+    } else if (isCrazy || isSurprised) {
+      // Wide open — tiny eyelid (~15%)
+      drawEyelid(ctx, ex, ey, eyeR, 0.15, skinColor, lineW);
+    } else {
+      // Normal open (~25%)
+      drawEyelid(ctx, ex, ey, eyeR, 0.25, skinColor, lineW);
     }
   }
 }
 
-function drawHappyEyebrows(ctx, faceY, outerR, ringWidth, cellSize, style) {
-  const browSpacing = cellSize * 0.09;
-  const browY = faceY - cellSize * 0.06;
-  const browLen = cellSize * 0.05;
+function drawEyelid(ctx, ex, ey, eyeR, coverage, skinColor, lineW) {
+  // coverage: 0.0 (fully open) to 1.0 (fully closed)
+  // Draws from top of eye downward
+  const lidY = ey - eyeR + eyeR * 2 * coverage;
 
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ex, ey, eyeR + 0.5, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.fillStyle = skinColor;
+  ctx.beginPath();
+  ctx.rect(ex - eyeR - 2, ey - eyeR - 2, eyeR * 2 + 4, (lidY - (ey - eyeR)) + 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Thick eyelid line at the edge
   ctx.strokeStyle = FACE_OUTLINE;
-  ctx.lineWidth = Math.max(1.2, cellSize * 0.018);
+  ctx.lineWidth = lineW * 1.2;
   ctx.lineCap = 'round';
-
-  const isGoofy = style === 'chocolate';
-
-  // Left brow — raised high, slight tilt
   ctx.beginPath();
-  ctx.moveTo(-browSpacing - browLen * 0.5, browY + cellSize * 0.01);
-  ctx.quadraticCurveTo(-browSpacing, browY - cellSize * (isGoofy ? 0.03 : 0.02), -browSpacing + browLen * 0.5, browY);
-  ctx.stroke();
-
-  // Right brow — slightly different angle for derpiness
-  ctx.beginPath();
-  ctx.moveTo(browSpacing * 0.9 - browLen * 0.5, browY - cellSize * 0.005);
-  ctx.quadraticCurveTo(browSpacing * 0.9, browY - cellSize * 0.025, browSpacing * 0.9 + browLen * 0.5, browY + cellSize * 0.008);
+  // Slight droop curve for natural look
+  ctx.moveTo(ex - eyeR * 0.95, lidY - eyeR * 0.05);
+  ctx.quadraticCurveTo(ex, lidY + eyeR * 0.08, ex + eyeR * 0.95, lidY - eyeR * 0.02);
   ctx.stroke();
 }
 
-function drawHappyMouth(ctx, faceY, outerR, ringWidth, cellSize, style) {
-  const mouthY = faceY + cellSize * 0.06;
-  const mouthW = cellSize * 0.07;
-  const mouthH = cellSize * 0.04;
+function drawEyelidBottom(ctx, ex, ey, eyeR, coverage, skinColor, lineW) {
+  // Bottom eyelid rising up
+  const lidY = ey + eyeR - eyeR * 2 * coverage;
 
-  const isGoofy = style === 'chocolate';
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ex, ey, eyeR + 0.5, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.fillStyle = skinColor;
+  ctx.beginPath();
+  ctx.rect(ex - eyeR - 2, lidY, eyeR * 2 + 4, eyeR * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Bottom lid line
+  ctx.strokeStyle = FACE_OUTLINE;
+  ctx.lineWidth = lineW;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(ex - eyeR * 0.85, lidY + eyeR * 0.03);
+  ctx.quadraticCurveTo(ex, lidY - eyeR * 0.06, ex + eyeR * 0.85, lidY + eyeR * 0.05);
+  ctx.stroke();
+}
+
+function drawHappyEyebrows(ctx, eyeY, eyeSpacing, outerR, cellSize, style, lineW) {
+  const browY = eyeY - outerR * 0.22;
+  const browLen = outerR * 0.22;
+
+  ctx.strokeStyle = FACE_OUTLINE;
+  ctx.lineWidth = lineW * 1.3;
+  ctx.lineCap = 'round';
+
+  const isSleepy = style === 'maple' || style === 'glazed';
+  const isSquinty = style === 'powdered';
+  const isCrazy = style === 'pink_sprinkle';
+
+  if (isSleepy) {
+    // Relaxed flat brows
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * eyeSpacing - side * browLen * 0.5, browY);
+      ctx.quadraticCurveTo(side * eyeSpacing, browY - outerR * 0.02, side * eyeSpacing + side * browLen * 0.5, browY + outerR * 0.01);
+      ctx.stroke();
+    }
+  } else if (isSquinty) {
+    // Smug angled brows
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * eyeSpacing - side * browLen * 0.5, browY + outerR * 0.04);
+      ctx.lineTo(side * eyeSpacing + side * browLen * 0.5, browY - outerR * 0.03);
+      ctx.stroke();
+    }
+  } else if (isCrazy) {
+    // Wild asymmetric brows
+    ctx.beginPath();
+    ctx.moveTo(-eyeSpacing - browLen * 0.5, browY + outerR * 0.03);
+    ctx.lineTo(-eyeSpacing + browLen * 0.5, browY - outerR * 0.06);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(eyeSpacing - browLen * 0.5, browY - outerR * 0.04);
+    ctx.lineTo(eyeSpacing + browLen * 0.5, browY + outerR * 0.02);
+    ctx.stroke();
+  } else {
+    // Normal raised brows (boston_cream, chocolate)
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(side * eyeSpacing - side * browLen * 0.5, browY + outerR * 0.02);
+      ctx.quadraticCurveTo(side * eyeSpacing, browY - outerR * 0.04, side * eyeSpacing + side * browLen * 0.5, browY);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawHappyMouth(ctx, mouthY, outerR, cellSize, style, lineW) {
+  const mouthW = outerR * 0.38;
+  const mouthH = outerR * 0.22;
+
+  const isCrazy = style === 'pink_sprinkle';
+  const isSleepy = style === 'maple' || style === 'glazed';
   const isSurprised = style === 'boston_cream';
   const isSquinty = style === 'powdered';
-  const hasTongue = style === 'pink_sprinkle' || style === 'glazed';
 
   if (isSurprised) {
-    // Round open mouth (surprised "O")
+    // Round open "O" mouth
     ctx.fillStyle = MOUTH_COLOR;
     ctx.beginPath();
-    ctx.ellipse(0, mouthY, mouthW * 0.5, mouthH * 0.8, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, mouthY, mouthW * 0.45, mouthH * 0.7, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = FACE_OUTLINE;
-    ctx.lineWidth = Math.max(1, cellSize * 0.012);
+    ctx.lineWidth = lineW;
     ctx.stroke();
-    // Inner darkness
-    ctx.fillStyle = '#3D0000';
+    // Darkness inside
+    ctx.fillStyle = '#2A0000';
     ctx.beginPath();
-    ctx.ellipse(0, mouthY, mouthW * 0.3, mouthH * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, mouthY + mouthH * 0.05, mouthW * 0.25, mouthH * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
     return;
   }
 
   if (isSquinty) {
-    // Wide open mouth (sneeze/laugh)
-    ctx.fillStyle = MOUTH_COLOR;
-    ctx.beginPath();
-    ctx.ellipse(0, mouthY + cellSize * 0.01, mouthW * 0.8, mouthH * 1.1, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Sly smirk — curved line, slightly open on one side
     ctx.strokeStyle = FACE_OUTLINE;
-    ctx.lineWidth = Math.max(1, cellSize * 0.012);
-    ctx.stroke();
-    // Tongue inside
-    ctx.fillStyle = TONGUE_COLOR;
+    ctx.lineWidth = lineW * 1.3;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.ellipse(0, mouthY + mouthH * 0.7, mouthW * 0.4, mouthH * 0.5, 0, 0, Math.PI);
-    ctx.fill();
+    ctx.moveTo(-mouthW * 0.6, mouthY + mouthH * 0.1);
+    ctx.quadraticCurveTo(0, mouthY - mouthH * 0.3, mouthW * 0.7, mouthY - mouthH * 0.15);
+    ctx.stroke();
     return;
   }
 
-  // Wide smile arc
-  const smileW = isGoofy ? mouthW * 1.2 : mouthW;
+  if (isSleepy) {
+    // Small confident closed smile
+    ctx.strokeStyle = FACE_OUTLINE;
+    ctx.lineWidth = lineW * 1.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-mouthW * 0.55, mouthY - mouthH * 0.1);
+    ctx.quadraticCurveTo(0, mouthY + mouthH * 0.5, mouthW * 0.55, mouthY - mouthH * 0.1);
+    ctx.stroke();
+    return;
+  }
+
+  // Wide open grin (pink_sprinkle, chocolate, default)
   ctx.fillStyle = MOUTH_COLOR;
   ctx.beginPath();
-  ctx.moveTo(-smileW, mouthY);
-  ctx.quadraticCurveTo(-smileW * 0.5, mouthY + mouthH * 2.5, 0, mouthY + mouthH * 2);
-  ctx.quadraticCurveTo(smileW * 0.5, mouthY + mouthH * 2.5, smileW, mouthY);
-  ctx.quadraticCurveTo(smileW * 0.3, mouthY + mouthH * 0.5, 0, mouthY + mouthH * 0.3);
-  ctx.quadraticCurveTo(-smileW * 0.3, mouthY + mouthH * 0.5, -smileW, mouthY);
+  ctx.moveTo(-mouthW, mouthY - mouthH * 0.2);
+  ctx.quadraticCurveTo(-mouthW * 0.5, mouthY + mouthH * 1.2, 0, mouthY + mouthH);
+  ctx.quadraticCurveTo(mouthW * 0.5, mouthY + mouthH * 1.2, mouthW, mouthY - mouthH * 0.2);
+  ctx.quadraticCurveTo(mouthW * 0.3, mouthY + mouthH * 0.2, 0, mouthY);
+  ctx.quadraticCurveTo(-mouthW * 0.3, mouthY + mouthH * 0.2, -mouthW, mouthY - mouthH * 0.2);
   ctx.fill();
   ctx.strokeStyle = FACE_OUTLINE;
-  ctx.lineWidth = Math.max(1, cellSize * 0.012);
+  ctx.lineWidth = lineW;
   ctx.stroke();
 
-  // Teeth (tiny white rectangles along top of mouth)
-  if (cellSize >= 55) {
-    const teethCount = isGoofy ? 4 : 2;
-    const teethW = smileW * 1.2 / teethCount;
-    const teethH = mouthH * 0.4;
+  // Teeth along top edge
+  if (cellSize >= 60) {
+    const teethCount = isCrazy ? 4 : 3;
+    const startX = -mouthW * 0.7;
+    const teethW = (mouthW * 1.4) / teethCount;
     ctx.fillStyle = EYE_WHITE;
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.5;
     for (let t = 0; t < teethCount; t++) {
-      const tx = -smileW * 0.6 + t * teethW + teethW * 0.15;
-      ctx.fillRect(tx, mouthY + mouthH * 0.2, teethW * 0.7, teethH);
+      const tx = startX + t * teethW;
+      const ty = mouthY - mouthH * 0.1;
+      const tw = teethW * 0.85;
+      const th = mouthH * 0.35;
+      ctx.fillRect(tx, ty, tw, th);
+      ctx.strokeRect(tx, ty, tw, th);
     }
   }
 
-  // Tongue poking out one side
-  if (hasTongue) {
-    const tongueX = smileW * 0.35;
-    const tongueY2 = mouthY + mouthH * 1.8;
+  // Tongue
+  if (isCrazy && cellSize >= 60) {
     ctx.fillStyle = TONGUE_COLOR;
     ctx.beginPath();
-    ctx.ellipse(tongueX, tongueY2, mouthW * 0.25, mouthH * 0.6, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(mouthW * 0.2, mouthY + mouthH * 0.5, mouthW * 0.3, mouthH * 0.4, 0.15, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = FACE_OUTLINE;
-    ctx.lineWidth = 0.8;
+    ctx.lineWidth = lineW * 0.6;
     ctx.stroke();
   }
 }
 
-function drawBlush(ctx, faceY, outerR, ringWidth, cellSize) {
-  const blushY = faceY + cellSize * 0.04;
-  const blushSpacing = cellSize * 0.13;
-  const blushR = cellSize * 0.025;
+function drawBlush(ctx, blushY, outerR, cellSize) {
+  const blushSpacing = outerR * 0.55;
+  const blushR = outerR * 0.10;
 
   ctx.fillStyle = BLUSH_COLOR;
   ctx.beginPath();
-  ctx.arc(-blushSpacing, blushY, blushR, 0, Math.PI * 2);
+  ctx.ellipse(-blushSpacing, blushY, blushR, blushR * 0.6, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(blushSpacing, blushY, blushR, 0, Math.PI * 2);
+  ctx.ellipse(blushSpacing, blushY, blushR, blushR * 0.6, 0, 0, Math.PI * 2);
   ctx.fill();
 }
 
