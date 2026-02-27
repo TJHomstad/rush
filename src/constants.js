@@ -29,19 +29,20 @@ export const DONUT_STYLES = [
   "powdered"
 ];
 
-// Colors
+// Colors — Shikaku block palette for sprinkles
 export const SPRINKLE_COLORS = [
-  "#FF6B6B",
-  "#4ECDC4",
-  "#45B7D1",
-  "#96CEB4",
-  "#FFEAA7",
-  "#DDA0DD",
-  "#FF8C42"
+  "#FF4444", // Bright Red
+  "#4488FF", // Royal Blue
+  "#44DD44", // Lime Green
+  "#FFDD44", // Sunny Yellow
+  "#FF8844", // Vivid Orange
+  "#AA44FF", // Bright Purple
+  "#FF44AA", // Hot Pink
+  "#44DDDD", // Teal
 ];
 
-export const PIPE_COLOR = "#5C3317";
-export const PIPE_FLOW_COLOR = "#D2691E";
+export const PIPE_COLOR = "#4A3728";       // empty: muted dark gray-brown
+export const PIPE_FLOW_COLOR = "#FF1493";  // flowing: hot pink
 export const GAME_BG = "#FFF8F0";
 
 // Donut terminal colors by style
@@ -57,17 +58,26 @@ export const DONUT_COLORS = {
 // Richer palette for 3D rendering
 export const DONUT_BASE = '#E8B960';
 export const DONUT_BASE_SHADOW = '#C4943D';
-export const FROSTING_COLORS = {
-  glazed: { main: '#F4D03F', highlight: '#F9E97A' },
-  chocolate: { main: '#5C3317', highlight: '#7B4B2A' },
-  pink_sprinkle: { main: '#FF85C0', highlight: '#FFB3D9' },
-  maple: { main: '#C68E17', highlight: '#D9A84A' },
-  boston_cream: { main: '#FDEBD0', highlight: '#FFF5E6', cap: '#5C3317' },
-  powdered: { main: '#FFFAFA', highlight: '#FFFFFF' }
+
+// Happy donut frosting — vibrant spring palette (when filled/in flow)
+export const HAPPY_FROSTING = {
+  glazed:        { main: '#FECA57', highlight: '#FFF3A3' },
+  chocolate:     { main: '#FF6B6B', highlight: '#FF9B9B' },
+  pink_sprinkle: { main: '#FF6B9D', highlight: '#FF9DBF' },
+  maple:         { main: '#A29BFE', highlight: '#C4BFFF' },
+  boston_cream:   { main: '#54A0FF', highlight: '#85BFFF', cap: '#7BED9F' },
+  powdered:      { main: '#7BED9F', highlight: '#A8F5C0' }
 };
+
+// Sad donut colors (unfilled — desaturated gray)
+export const SAD_DONUT_BASE = '#A0A0A0';
+export const SAD_DONUT_SHADOW = '#808080';
+export const SAD_FROSTING = '#909090';
+
 export const PIPE_OUTLINE = '#2A1506';
+export const PIPE_FLOW_OUTLINE = '#3D0522';  // flowing: very dark magenta
 export const PIPE_HIGHLIGHT = '#8B6040';
-export const PIPE_FLOW_HIGHLIGHT = '#E8943A';
+export const PIPE_FLOW_HIGHLIGHT = '#FF69B4'; // flowing: bright pink
 
 // Connection directions: 0=top, 1=right, 2=bottom, 3=left
 export const DIR = { TOP: 0, RIGHT: 1, BOTTOM: 2, LEFT: 3 };

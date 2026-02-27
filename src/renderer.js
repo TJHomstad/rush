@@ -3,8 +3,9 @@
 
 import {
   PIPE_COLOR, PIPE_FLOW_COLOR, GAME_BG, SPRINKLE_COLORS,
-  DONUT_BASE, DONUT_BASE_SHADOW, FROSTING_COLORS,
-  PIPE_OUTLINE, PIPE_HIGHLIGHT, PIPE_FLOW_HIGHLIGHT,
+  DONUT_BASE, DONUT_BASE_SHADOW,
+  HAPPY_FROSTING, SAD_DONUT_BASE, SAD_DONUT_SHADOW, SAD_FROSTING,
+  PIPE_OUTLINE, PIPE_FLOW_OUTLINE, PIPE_HIGHLIGHT, PIPE_FLOW_HIGHLIGHT,
   DIR_OFFSET, OPPOSITE
 } from './constants.js';
 import { getActiveConnections } from './game.js';
@@ -98,7 +99,7 @@ export function render(state, model) {
     ctx.stroke();
   }
 
-  // 4. Win celebration — golden pipe glow (drawn under pipes)
+  // 4. Win celebration state
   const winElapsed = state.winTime ? (performance.now() - state.winTime) / 1000 : -1;
   const inWinCelebration = winElapsed >= 0 && winElapsed < 2.5;
 
@@ -132,17 +133,16 @@ function drawTile(ctx, tile, x, y, cellSize, inFlow, inWinCelebration, winElapse
 
   // Colors based on flow state
   const bodyColor = inFlow ? PIPE_FLOW_COLOR : PIPE_COLOR;
-  const outlineColor = PIPE_OUTLINE;
+  const outlineColor = inFlow ? PIPE_FLOW_OUTLINE : PIPE_OUTLINE;
   const highlightColor = inFlow ? PIPE_FLOW_HIGHLIGHT : PIPE_HIGHLIGHT;
 
-  // Win celebration glow on flowing pipes
+  // Win celebration glow on flowing pipes — hot pink
   if (inWinCelebration && inFlow) {
     const pulse = 0.3 + 0.3 * Math.sin(winElapsed * 6);
     ctx.save();
-    ctx.shadowColor = '#FFD700';
+    ctx.shadowColor = '#FF1493';
     ctx.shadowBlur = cellSize * 0.3 * pulse;
-    // Draw glow base
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+    ctx.strokeStyle = 'rgba(255, 20, 147, 0.3)';
     ctx.lineWidth = outerWidth + 4;
     ctx.lineCap = 'round';
     for (const dir of active) {
@@ -189,18 +189,14 @@ function drawTile(ctx, tile, x, y, cellSize, inFlow, inWinCelebration, winElapse
   ctx.strokeStyle = highlightColor;
   ctx.lineWidth = highlightWidth;
   ctx.lineCap = 'round';
-  const hlOff = pipeWidth * 0.25; // offset amount
+  const hlOff = pipeWidth * 0.25;
   for (const dir of active) {
     const [dr, dc] = DIR_OFFSET[dir];
     const ex = cx + dc * (cellSize / 2);
     const ey = cy + dr * (cellSize / 2);
-    // Offset perpendicular to pipe direction for 3D illusion
     let ox, oy;
-    if (dc === 0) { // vertical pipe
-      ox = -hlOff; oy = 0;
-    } else { // horizontal pipe
-      ox = 0; oy = -hlOff;
-    }
+    if (dc === 0) { ox = -hlOff; oy = 0; }
+    else { ox = 0; oy = -hlOff; }
     ctx.beginPath();
     ctx.moveTo(cx + ox, cy + oy);
     ctx.lineTo(ex + ox, ey + oy);
@@ -238,29 +234,93 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
   const outerR = cellSize * 0.34;
   const ringWidth = cellSize * 0.14;
   const innerR = outerR - ringWidth;
-  const frosting = FROSTING_COLORS[style] || FROSTING_COLORS.glazed;
 
-  // Win celebration: pulsing scale
-  let scale = 1;
+  if (inFlow) {
+    drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR, inWinCelebration, winElapsed);
+  } else {
+    drawSadDonut(ctx, cx, cy, cellSize, outerR, ringWidth, innerR);
+  }
+}
+
+// ─── Sad Donut (unfilled — gray, droopy, deflated) ───────────
+
+function drawSadDonut(ctx, cx, cy, cellSize, outerR, ringWidth, innerR) {
+  const scale = 0.92;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+
+  // Gray donut body ring
+  const bodyGrad = ctx.createRadialGradient(
+    -outerR * 0.2, -outerR * 0.2, innerR * 0.5,
+    0, 0, outerR * 1.1
+  );
+  bodyGrad.addColorStop(0, '#B8B8B8');
+  bodyGrad.addColorStop(0.5, SAD_DONUT_BASE);
+  bodyGrad.addColorStop(1, SAD_DONUT_SHADOW);
+
+  ctx.strokeStyle = bodyGrad;
+  ctx.lineWidth = ringWidth;
+  ctx.beginPath();
+  ctx.arc(0, 0, outerR - ringWidth / 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Gray outlines
+  ctx.strokeStyle = '#686868';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, innerR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Droopy frosting — sags to the bottom half
+  const droopStart = -Math.PI * 0.15;
+  const droopEnd = Math.PI * 1.15;
+
+  ctx.strokeStyle = SAD_FROSTING;
+  ctx.lineWidth = ringWidth * 0.65;
+  ctx.lineCap = 'butt';
+  ctx.beginPath();
+  ctx.arc(0, 0, outerR - ringWidth / 2, droopStart, droopEnd);
+  ctx.stroke();
+
+  // No highlight arc — sad donuts don't shine
+
+  // Dark, flat donut hole
+  ctx.fillStyle = 'rgba(50, 50, 50, 0.4)';
+  ctx.beginPath();
+  ctx.arc(0, 0, innerR, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ─── Happy Donut (filled — vibrant spring colors, glossy) ────
+
+function drawHappyDonut(ctx, cx, cy, cellSize, style, outerR, ringWidth, innerR, inWinCelebration, winElapsed) {
+  const frosting = HAPPY_FROSTING[style] || HAPPY_FROSTING.glazed;
+
+  // Scale: 1.0 base with gentle pulse when happy, bigger pulse during win
+  let scale = 1.0 + 0.02 * Math.sin(performance.now() / 300);
   if (inWinCelebration) {
-    scale = 1 + 0.08 * Math.sin(winElapsed * 8);
+    scale = 1.0 + 0.08 * Math.sin(winElapsed * 8);
   }
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
 
-  // Flow glow — soft pulsing shadow
-  if (inFlow) {
-    const glowPulse = inWinCelebration
-      ? 0.6 + 0.3 * Math.sin(winElapsed * 6)
-      : 0.4 + 0.15 * Math.sin(performance.now() / 400);
-    ctx.shadowColor = frosting.main;
-    ctx.shadowBlur = cellSize * 0.25 * glowPulse;
-  }
+  // Hot pink flow glow
+  const glowPulse = inWinCelebration
+    ? 0.6 + 0.3 * Math.sin(winElapsed * 6)
+    : 0.4 + 0.15 * Math.sin(performance.now() / 400);
+  ctx.shadowColor = '#FF1493';
+  ctx.shadowBlur = cellSize * 0.25 * glowPulse;
 
-  // Donut body — thick arc stroke (torus ring) with gradient
-  // Base ring
+  // Warm golden donut body ring
   const bodyGrad = ctx.createRadialGradient(
     -outerR * 0.2, -outerR * 0.2, innerR * 0.5,
     0, 0, outerR * 1.1
@@ -279,19 +339,17 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
 
-  // Donut outline (outer edge)
+  // Golden outlines
   ctx.strokeStyle = '#8B6914';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(0, 0, outerR, 0, Math.PI * 2);
   ctx.stroke();
-
-  // Donut outline (inner hole edge)
   ctx.beginPath();
   ctx.arc(0, 0, innerR, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Frosting overlay — top portion of donut
+  // Frosting overlay — top portion (normal, not droopy)
   const frostStart = -Math.PI * 0.85;
   const frostEnd = Math.PI * 0.85;
 
@@ -302,7 +360,7 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
   ctx.arc(0, 0, outerR - ringWidth / 2, frostStart, frostEnd);
   ctx.stroke();
 
-  // Frosting highlight — thinner bright arc near top
+  // Frosting highlight — glossy shine arc
   ctx.strokeStyle = frosting.highlight;
   ctx.lineWidth = ringWidth * 0.25;
   ctx.beginPath();
@@ -311,8 +369,7 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
 
   // Style-specific details
   if (style === 'pink_sprinkle') {
-    // Scatter tiny sprinkles on the frosting
-    const sprinkleColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFEAA7', '#DDA0DD', '#FF8C42'];
+    // Sprinkles use Shikaku block palette
     const midR = outerR - ringWidth / 2;
     for (let i = 0; i < 10; i++) {
       const angle = frostStart + (frostEnd - frostStart) * (i + 0.5) / 10;
@@ -324,26 +381,26 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
       ctx.save();
       ctx.translate(sx, sy);
       ctx.rotate(rot);
-      ctx.fillStyle = sprinkleColors[i % sprinkleColors.length];
+      ctx.fillStyle = SPRINKLE_COLORS[i % SPRINKLE_COLORS.length];
       ctx.fillRect(-cellSize * 0.025, -cellSize * 0.008, cellSize * 0.05, cellSize * 0.016);
       ctx.restore();
     }
   } else if (style === 'boston_cream') {
-    // Dark chocolate cap on top
+    // Spring green cap on top
     ctx.strokeStyle = frosting.cap;
     ctx.lineWidth = ringWidth * 0.5;
     ctx.beginPath();
     ctx.arc(0, 0, outerR - ringWidth / 2, -Math.PI * 0.5, Math.PI * 0.5);
     ctx.stroke();
     // Shine on cap
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = ringWidth * 0.15;
     ctx.beginPath();
     ctx.arc(0, 0, outerR - ringWidth * 0.4, -Math.PI * 0.3, Math.PI * 0.1);
     ctx.stroke();
   } else if (style === 'powdered') {
-    // Semi-transparent white dusting
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    // Semi-transparent spring green dusting
+    ctx.strokeStyle = 'rgba(123, 237, 159, 0.45)';
     ctx.lineWidth = ringWidth * 0.85;
     ctx.beginPath();
     ctx.arc(0, 0, outerR - ringWidth / 2, 0, Math.PI * 2);
@@ -354,14 +411,14 @@ function drawDonut(ctx, cx, cy, cellSize, style, inFlow, inWinCelebration, winEl
       const sr = outerR - ringWidth / 2 + (Math.sin(i * 5.1) * ringWidth * 0.15);
       const sx = Math.cos(angle) * sr;
       const sy = Math.sin(angle) * sr;
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillStyle = 'rgba(168, 245, 192, 0.8)';
       ctx.beginPath();
       ctx.arc(sx, sy, cellSize * 0.012, 0, Math.PI * 2);
       ctx.fill();
     }
   } else if (style === 'maple') {
-    // Darker streak accents on frosting
-    ctx.strokeStyle = '#A0720E';
+    // Darker lavender streak accents
+    ctx.strokeStyle = '#7C75D4';
     ctx.lineWidth = ringWidth * 0.12;
     for (let i = 0; i < 3; i++) {
       const a1 = frostStart + (frostEnd - frostStart) * (0.2 + i * 0.25);
@@ -396,12 +453,12 @@ function drawSource(ctx, cx, cy, cellSize, inFlow, inWinCelebration, winElapsed)
   ctx.save();
   ctx.translate(cx, cy);
 
-  // Win/flow glow
+  // Flow glow — hot pink
   if (inFlow) {
     const glowPulse = inWinCelebration
       ? 0.6 + 0.4 * Math.sin(winElapsed * 6)
       : 0.3 + 0.15 * Math.sin(performance.now() / 500);
-    ctx.shadowColor = '#FF8C42';
+    ctx.shadowColor = '#FF1493';
     ctx.shadowBlur = cellSize * 0.3 * glowPulse;
   }
 
@@ -446,16 +503,16 @@ function drawSource(ctx, cx, cy, cellSize, inFlow, inWinCelebration, winElapsed)
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Top tier — small circle (chocolate top)
+  // Top tier — small circle
   const topY = -unit * 2;
   const topR = unit * 2;
   const topGrad = ctx.createRadialGradient(
     -topR * 0.3, topY - topR * 0.3, topR * 0.15,
     0, topY, topR
   );
-  topGrad.addColorStop(0, inFlow ? '#E8943A' : '#9B6B3A');
-  topGrad.addColorStop(0.6, inFlow ? '#D2691E' : '#7B4B2A');
-  topGrad.addColorStop(1, '#5C3317');
+  topGrad.addColorStop(0, inFlow ? '#FF69B4' : '#9B6B3A');
+  topGrad.addColorStop(0.6, inFlow ? '#FF1493' : '#7B4B2A');
+  topGrad.addColorStop(1, inFlow ? '#8B0A50' : '#5C3317');
 
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
@@ -469,7 +526,7 @@ function drawSource(ctx, cx, cy, cellSize, inFlow, inWinCelebration, winElapsed)
   ctx.stroke();
 
   // Highlight dot on top tier
-  ctx.fillStyle = inFlow ? 'rgba(255, 220, 150, 0.6)' : 'rgba(200, 170, 120, 0.4)';
+  ctx.fillStyle = inFlow ? 'rgba(255, 182, 223, 0.6)' : 'rgba(200, 170, 120, 0.4)';
   ctx.beginPath();
   ctx.arc(-topR * 0.25, topY - topR * 0.25, topR * 0.3, 0, Math.PI * 2);
   ctx.fill();
@@ -534,9 +591,8 @@ export function updateParticles(state, model, deltaMs) {
       const active = getActiveConnections(sourceTile);
       if (active.length > 0) {
         const dir = active[Math.floor(Math.random() * active.length)];
-        // Random shape: 0=rect, 1=circle, 2=oval
         const shape = Math.floor(Math.random() * 3);
-        const size = 2 + Math.random() * 3; // 2-5px
+        const size = 2 + Math.random() * 3;
         const spin = Math.random() * Math.PI * 2;
         particles.push({
           x: model.source.col * cellSize + cellSize / 2,
@@ -600,15 +656,12 @@ function drawParticleShape(ctx, x, y, p) {
 
   const s = p.size;
   if (p.shape === 0) {
-    // Rectangle sprinkle
     ctx.fillRect(-s, -s * 0.4, s * 2, s * 0.8);
   } else if (p.shape === 1) {
-    // Circle
     ctx.beginPath();
     ctx.arc(0, 0, s * 0.6, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Oval
     ctx.beginPath();
     ctx.ellipse(0, 0, s, s * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -622,13 +675,13 @@ function drawParticleShape(ctx, x, y, p) {
 export function triggerWinCelebration(state, model) {
   state.winTime = performance.now();
 
-  // Burst particles from all terminals — 16 per terminal
+  // Burst particles from all terminals — 16 per terminal, Shikaku palette
   for (const t of model.terminals) {
     const cx = t.col * state.cellSize + state.cellSize / 2;
     const cy = t.row * state.cellSize + state.cellSize / 2;
     for (let i = 0; i < 16; i++) {
       const angle = (Math.PI * 2 / 16) * i + (Math.random() - 0.5) * 0.3;
-      const speed = 60 + Math.random() * 60; // faster burst
+      const speed = 60 + Math.random() * 60;
       const shape = Math.floor(Math.random() * 3);
       const size = 2 + Math.random() * 3;
       state.particles.push({
