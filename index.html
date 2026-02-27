@@ -18,26 +18,30 @@
       </a>
       <nav>
         <a href="how-to-play.html">How to Play</a>
-        <a href="https://derpydonut.com">Shikaku</a>
+        <a href="../shikaku-codex/">Shikaku</a>
         <a href="privacy.html">Privacy</a>
-        <button id="auth-btn">Log In</button>
+        <button id="nav-login-btn" class="nav-btn">Log In</button>
+        <span id="session-user" class="session-user" hidden></span>
+        <button id="logout-btn" class="nav-btn" hidden>Log Out</button>
       </nav>
     </header>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="screen">
-      <img src="donut-logo-2.png" alt="DerpyDonut" class="login-logo">
-      <h2>Welcome to Glaze Rush!</h2>
-      <p>Rotate pipes to deliver sprinkles to all donuts.</p>
-      <div class="login-form">
-        <input type="text" id="login-name" placeholder="First name" list="known-players" autocomplete="off">
-        <input type="password" id="login-password" placeholder="Password">
+    <div id="login-screen" class="screen" style="display:none">
+      <h2>Sign In</h2>
+      <p class="lead">Sign in to submit scores to the global leaderboard.</p>
+      <form class="login-form" id="login-form">
+        <label for="login-name">First Name</label>
+        <input type="text" id="login-name" placeholder="First name" list="known-players" autocomplete="username" required>
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
         <div class="hint">Hint: it's a baked good</div>
-        <div class="btn-row" style="justify-content:center">
-          <button class="btn primary" id="login-btn">Log In</button>
-          <button class="btn" id="guest-btn">Play as Guest</button>
-        </div>
+        <button class="btn primary" id="login-btn" type="submit">Log In</button>
+      </form>
+      <div class="action-row" style="text-align:center;margin-top:1rem">
+        <button class="btn" id="login-back-btn" type="button">Back</button>
       </div>
+      <p id="login-note" class="note"></p>
       <datalist id="known-players">
         <option value="Dad">
         <option value="Mom">
@@ -49,7 +53,7 @@
     </div>
 
     <!-- Home Screen -->
-    <div id="home-screen" class="screen">
+    <div id="home-screen" class="screen active">
       <img src="donut-logo-2.png" alt="DerpyDonut" class="home-logo">
       <h1>Play Glaze Rush</h1>
       <p class="lead">Rotate pipes to deliver chocolate sprinkles to all donuts!</p>

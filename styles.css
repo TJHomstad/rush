@@ -90,6 +90,11 @@ header nav button:hover {
   color: var(--accent);
 }
 
+.session-user {
+  color: var(--ink-light);
+  font-size: 14px;
+}
+
 /* ─── Screens ────────────────────────────────────────────── */
 
 .screen {

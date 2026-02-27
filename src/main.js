@@ -37,26 +37,26 @@ const $ = (id) => document.getElementById(id);
 const screens = document.querySelectorAll('.screen');
 
 function showScreen(id) {
-  screens.forEach(s => s.classList.remove('active'));
+  screens.forEach(s => {
+    s.classList.remove('active');
+    s.style.display = '';
+  });
   $(id).classList.add('active');
 }
 
 // ─── Init ────────────────────────────────────────────────────
 
 async function init() {
-  // Check session
+  // Home screen is shown by default (guest mode). Try restoring session silently.
   try {
     const userData = await api.me();
     if (userData && userData.firstName) {
       state.user = userData;
-      updateAuthUI();
-      showScreen('home-screen');
-    } else {
-      showScreen('login-screen');
     }
   } catch {
-    showScreen('login-screen');
+    // No session — stay as guest
   }
+  syncSessionUI();
 
   // Load catalog
   try {
@@ -74,18 +74,25 @@ async function init() {
 
 // ─── Auth ────────────────────────────────────────────────────
 
-function updateAuthUI() {
-  const btn = $('auth-btn');
+function syncSessionUI() {
+  const loginBtn = $('nav-login-btn');
+  const sessionUser = $('session-user');
+  const logoutBtn = $('logout-btn');
   if (state.user) {
-    btn.textContent = `${state.user.firstName} (Log Out)`;
-  } else if (state.isGuest) {
-    btn.textContent = 'Log In';
+    loginBtn.hidden = true;
+    sessionUser.hidden = false;
+    logoutBtn.hidden = false;
+    sessionUser.textContent = `Signed in: ${state.user.firstName}`;
   } else {
-    btn.textContent = 'Log In';
+    loginBtn.hidden = false;
+    sessionUser.hidden = true;
+    logoutBtn.hidden = true;
+    sessionUser.textContent = '';
   }
 }
 
-async function handleLogin() {
+async function handleLogin(e) {
+  if (e) e.preventDefault();
   const name = $('login-name').value.trim();
   const password = $('login-password').value;
   if (!name || !password) return toast('Enter name and password');
@@ -93,32 +100,20 @@ async function handleLogin() {
   try {
     const data = await api.login(name, password);
     state.user = { firstName: data.firstName || name };
-    state.isGuest = false;
-    updateAuthUI();
+    syncSessionUI();
     showScreen('home-screen');
     loadHomeLeaderboards();
+    toast(`Welcome, ${state.user.firstName}!`);
   } catch (e) {
-    toast('Login failed — check your credentials');
+    $('login-note').textContent = 'Login failed — check your credentials';
   }
 }
 
-function handleGuest() {
+async function handleLogout() {
+  try { await api.logout(); } catch { /* ignore */ }
   state.user = null;
-  state.isGuest = true;
-  updateAuthUI();
-  showScreen('home-screen');
-}
-
-async function handleAuthBtn() {
-  if (state.user) {
-    await api.logout();
-    state.user = null;
-    state.isGuest = false;
-    updateAuthUI();
-    showScreen('login-screen');
-  } else {
-    showScreen('login-screen');
-  }
+  syncSessionUI();
+  loadHomeLeaderboards();
 }
 
 // ─── Difficulty / Size Selectors ─────────────────────────────
@@ -481,8 +476,8 @@ function handleWin() {
   $('solved-best').textContent = bestTime ? `Best: ${formatMs(bestTime)}` : '';
   $('solved-moves').textContent = `${state.model.moves} moves`;
 
-  // Show login prompt if guest
-  $('solved-login-prompt').style.display = (state.isGuest && !state.user) ? '' : 'none';
+  // Show login prompt if not logged in
+  $('solved-login-prompt').style.display = state.user ? 'none' : '';
 
   // Submit score if logged in
   if (state.user) {
@@ -527,11 +522,16 @@ async function loadPuzzleLeaderboard(difficulty, size, level) {
 // ─── Event Listeners ─────────────────────────────────────────
 
 function setupEventListeners() {
-  // Login
-  $('login-btn').addEventListener('click', handleLogin);
-  $('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
-  $('guest-btn').addEventListener('click', handleGuest);
-  $('auth-btn').addEventListener('click', handleAuthBtn);
+  // Auth — nav buttons
+  $('nav-login-btn').addEventListener('click', () => {
+    $('login-note').textContent = '';
+    showScreen('login-screen');
+  });
+  $('logout-btn').addEventListener('click', handleLogout);
+
+  // Login form
+  $('login-form').addEventListener('submit', handleLogin);
+  $('login-back-btn').addEventListener('click', () => showScreen('home-screen'));
 
   // Home
   $('start-btn').addEventListener('click', handleStart);
