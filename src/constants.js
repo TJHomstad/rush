@@ -54,6 +54,21 @@ export const DONUT_COLORS = {
   powdered: "#FFFAFA"
 };
 
+// Richer palette for 3D rendering
+export const DONUT_BASE = '#E8B960';
+export const DONUT_BASE_SHADOW = '#C4943D';
+export const FROSTING_COLORS = {
+  glazed: { main: '#F4D03F', highlight: '#F9E97A' },
+  chocolate: { main: '#5C3317', highlight: '#7B4B2A' },
+  pink_sprinkle: { main: '#FF85C0', highlight: '#FFB3D9' },
+  maple: { main: '#C68E17', highlight: '#D9A84A' },
+  boston_cream: { main: '#FDEBD0', highlight: '#FFF5E6', cap: '#5C3317' },
+  powdered: { main: '#FFFAFA', highlight: '#FFFFFF' }
+};
+export const PIPE_OUTLINE = '#2A1506';
+export const PIPE_HIGHLIGHT = '#8B6040';
+export const PIPE_FLOW_HIGHLIGHT = '#E8943A';
+
 // Connection directions: 0=top, 1=right, 2=bottom, 3=left
 export const DIR = { TOP: 0, RIGHT: 1, BOTTOM: 2, LEFT: 3 };
 
