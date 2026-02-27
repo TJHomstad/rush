@@ -45,6 +45,13 @@ export const PIPE_COLOR = "#4A3728";       // empty: muted dark gray-brown
 export const PIPE_FLOW_COLOR = "#FF1493";  // flowing: hot pink
 export const GAME_BG = "#FFF8F0";
 
+// Glass pipe colors
+export const GLASS_TINT = 'rgba(180, 210, 240, 0.35)';
+export const GLASS_OUTLINE = 'rgba(26, 42, 58, 0.5)';
+export const GLASS_HIGHLIGHT = 'rgba(255, 255, 255, 0.7)';
+export const GLASS_SHADOW = 'rgba(0, 20, 60, 0.15)';
+export const GLASS_FLOW_FILL = 'rgba(255, 20, 147, 0.7)';
+
 // Donut terminal colors by style
 export const DONUT_COLORS = {
   glazed: "#F4C430",
@@ -78,6 +85,15 @@ export const PIPE_OUTLINE = '#2A1506';
 export const PIPE_FLOW_OUTLINE = '#3D0522';  // flowing: very dark magenta
 export const PIPE_HIGHLIGHT = '#8B6040';
 export const PIPE_FLOW_HIGHLIGHT = '#FF69B4'; // flowing: bright pink
+
+// Face colors for donut characters
+export const FACE_OUTLINE = '#2B1810';
+export const EYE_WHITE = '#FFFFFF';
+export const PUPIL_COLOR = '#1A1A2E';
+export const TONGUE_COLOR = '#FF6B8A';
+export const BLUSH_COLOR = 'rgba(255, 150, 180, 0.4)';
+export const MOUTH_COLOR = '#8B1A1A';
+export const SAD_EYE = '#888888';
 
 // Connection directions: 0=top, 1=right, 2=bottom, 3=left
 export const DIR = { TOP: 0, RIGHT: 1, BOTTOM: 2, LEFT: 3 };
